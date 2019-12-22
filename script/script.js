@@ -10,19 +10,32 @@ document.addEventListener('DOMContentLoaded', () => {
     formCustomer = document.getElementById('form-customer'),
     ordersTable = document.getElementById('orders'),
     modalOrder = document.getElementById('order_read'),
-    modalOrderActive = document.getElementById('order_active');
+    modalOrderActive = document.getElementById('order_active'),
+    headTable = document.getElementById('headTable');
 
 
   const orders = JSON.parse(localStorage.getItem('freeOrders')) || [];
-  console.log(orders);
+
   const toStorage = () => {
     localStorage.setItem('freeOrders', JSON.stringify(orders));
   };
 
-const calcDeadline = (deadline) => {
-    const day = '10 дней';
-    return day;
+  const declOfNum = (number, titles) => number + ' ' +
+    titles[(number % 100 > 4 && number % 100 < 20) ? 2 : 
+    [2, 0, 1, 1, 1, 2][(number % 10 < 5) ? number % 10 : 5]];
+
+  const calcDeadline = (date) => {
+    const deadline = new Date(date);
+    const toDay = Date.now();
+
+    const remaining = (deadline - toDay) / 1000 / 60 / 60;
+
+if (remaining / 24 > 2) {
+  return declOfNum(Math.floor(remaining / 24), ['день', 'дня', 'дней']);
 }
+
+    return declOfNum(Math.floor(remaining), ['час', 'часа', 'часов']);
+  }
 
   const renderOrders = () => {
 
@@ -38,7 +51,7 @@ const calcDeadline = (deadline) => {
         <td class="${order.currency}"></td>
         <td>${calcDeadline(order.deadline)}</td>
 				</tr>`;
-      console.log('order: ', order);
+
     });
   };
 
@@ -73,7 +86,7 @@ const calcDeadline = (deadline) => {
       orders.splice(orders.indexOf(order), 1);
       baseAction();
     }
-  }
+  };
 
   const openModal = (numberOrder) => {
     const order = orders[numberOrder];
@@ -114,12 +127,35 @@ const calcDeadline = (deadline) => {
 
     phoneBlock ? phoneBlock.href = 'tel:' + phone : '';
 
-
     modal.style.display = 'flex';
 
     modal.addEventListener('click', handlerModal);
 
   };
+
+  const sortOrder = (arr, property) => {
+    arr.sort((a, b) => a[property] > b[property] ? 1: -1)
+  }
+
+  headTable.addEventListener('click', (event) => {
+    const target = event.target;
+
+    if (target.classList.contains('head-sort')){
+      if(target.id === 'taskSort'){
+        sortOrder(orders, 'title');
+      }
+
+      if(target.id === 'currencySort'){
+        sortOrder(orders, 'currency');
+      }
+
+      if(target.id === 'deadlineSort'){
+        sortOrder(orders, 'deadline');
+      }
+      toStorage();
+      renderOrders();
+    }
+  });
 
   ordersTable.addEventListener('click', (event) => {
     const target = event.target;
@@ -132,6 +168,8 @@ const calcDeadline = (deadline) => {
 
   customer.addEventListener('click', () => {
     blockChoice.style.display = 'none';
+    const toDay = new Date().toISOString().substring(0, 10);
+    document.getElementById('deadline').min = toDay;
     blockCustomer.style.display = 'block';
     btnExit.style.display = 'block';
   });
